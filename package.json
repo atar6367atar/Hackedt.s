@@ -1,7 +1,7 @@
 {
-  "name": "fotograf-sayfasi",
+  "name": "guvenli-dosya",
   "version": "1.0.0",
-  "description": "Kamera izni alıp fotoğraf çeken sayfa",
+  "description": "Güvenli dosya görüntüleme uygulaması",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
